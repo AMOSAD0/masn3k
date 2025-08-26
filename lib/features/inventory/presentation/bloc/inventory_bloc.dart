@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:masn3k/features/activities/domin/entities/activity.dart';
+import 'package:masn3k/features/activities/domin/repositories/activity_repository.dart';
 import '../../domain/entities/item.dart';
 import '../../domain/entities/inventory_transaction.dart';
 import '../../domain/repositories/inventory_repository.dart';
@@ -45,11 +47,12 @@ class UpdateItem extends InventoryEvent {
 
 class DeleteItem extends InventoryEvent {
   final int itemId;
+  final Item item;
 
-  const DeleteItem(this.itemId);
+  const DeleteItem(this.itemId, this.item);
 
   @override
-  List<Object?> get props => [itemId];
+  List<Object?> get props => [itemId, item];
 }
 
 class LoadItemTransactions extends InventoryEvent {
@@ -171,8 +174,10 @@ class InventoryError extends InventoryState {
 // BLoC
 class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
   final InventoryRepository _repository;
+  final ActivityRepository _activityRepository;
 
-  InventoryBloc(this._repository) : super(InventoryInitial()) {
+  InventoryBloc(this._repository, this._activityRepository)
+    : super(InventoryInitial()) {
     on<LoadItems>(_onLoadItems);
     on<SearchItems>(_onSearchItems);
     on<LoadLowStockItems>(_onLoadLowStockItems);
@@ -186,7 +191,10 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     on<LoadLowStockReport>(_onLoadLowStockReport);
   }
 
-  Future<void> _onLoadItems(LoadItems event, Emitter<InventoryState> emit) async {
+  Future<void> _onLoadItems(
+    LoadItems event,
+    Emitter<InventoryState> emit,
+  ) async {
     emit(InventoryLoading());
     try {
       final items = await _repository.getAllItems();
@@ -196,7 +204,10 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     }
   }
 
-  Future<void> _onSearchItems(SearchItems event, Emitter<InventoryState> emit) async {
+  Future<void> _onSearchItems(
+    SearchItems event,
+    Emitter<InventoryState> emit,
+  ) async {
     emit(InventoryLoading());
     try {
       final items = await _repository.searchItems(event.query);
@@ -206,7 +217,10 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     }
   }
 
-  Future<void> _onLoadLowStockItems(LoadLowStockItems event, Emitter<InventoryState> emit) async {
+  Future<void> _onLoadLowStockItems(
+    LoadLowStockItems event,
+    Emitter<InventoryState> emit,
+  ) async {
     emit(InventoryLoading());
     try {
       final items = await _repository.getLowStockItems();
@@ -220,6 +234,17 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     emit(InventoryLoading());
     try {
       await _repository.addItem(event.item);
+      await _activityRepository.logActivity(
+        Activity(
+          category: "inventory",
+          action: "add",
+          description: "اضافة عنصر : ${event.item.name}",
+          quantity: event.item.quantity,
+          amount: event.item.price,
+          related_item: event.item.name,
+          createdAt: DateTime.now(),
+        ),
+      );
       emit(const InventorySuccess('تم إضافة العنصر بنجاح'));
       add(LoadItems());
     } catch (e) {
@@ -227,10 +252,24 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     }
   }
 
-  Future<void> _onUpdateItem(UpdateItem event, Emitter<InventoryState> emit) async {
+  Future<void> _onUpdateItem(
+    UpdateItem event,
+    Emitter<InventoryState> emit,
+  ) async {
     emit(InventoryLoading());
     try {
       await _repository.updateItem(event.item);
+      await _activityRepository.logActivity(
+        Activity(
+          category: "inventory",
+          action: "update",
+          description: "تعديل عنصر : ${event.item.name}",
+          quantity: event.item.quantity,
+          amount: event.item.price,
+          related_item: event.item.name,
+          createdAt: DateTime.now(),
+        ),
+      );
       emit(const InventorySuccess('تم تحديث العنصر بنجاح'));
       add(LoadItems());
     } catch (e) {
@@ -238,10 +277,24 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     }
   }
 
-  Future<void> _onDeleteItem(DeleteItem event, Emitter<InventoryState> emit) async {
+  Future<void> _onDeleteItem(
+    DeleteItem event,
+    Emitter<InventoryState> emit,
+  ) async {
     emit(InventoryLoading());
     try {
       await _repository.deleteItem(event.itemId);
+      await _activityRepository.logActivity(
+        Activity(
+          category: "inventory",
+          action: "delete",
+          description: "حذف عنصر : ${event.item.name}",
+          quantity: event.item.quantity,
+          amount: event.item.price,
+          related_item: event.item.name,
+          createdAt: DateTime.now(),
+        ),
+      );
       emit(const InventorySuccess('تم حذف العنصر بنجاح'));
       add(LoadItems());
     } catch (e) {
@@ -249,7 +302,10 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     }
   }
 
-  Future<void> _onLoadItemTransactions(LoadItemTransactions event, Emitter<InventoryState> emit) async {
+  Future<void> _onLoadItemTransactions(
+    LoadItemTransactions event,
+    Emitter<InventoryState> emit,
+  ) async {
     emit(InventoryLoading());
     try {
       final transactions = await _repository.getItemTransactions(event.itemId);
@@ -259,10 +315,25 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     }
   }
 
-  Future<void> _onAddTransaction(AddTransaction event, Emitter<InventoryState> emit) async {
+  Future<void> _onAddTransaction(
+    AddTransaction event,
+    Emitter<InventoryState> emit,
+  ) async {
     emit(InventoryLoading());
     try {
       await _repository.addTransaction(event.transaction);
+
+      await _activityRepository.logActivity(
+        Activity(
+          category: "inventory",
+          action: event.transaction.type.name,
+          description:
+              "اضافة معاملة ${event.transaction.type.name} للعنصر: ${event.transaction.itemName ?? ''}",
+          quantity: event.transaction.quantity,
+          related_item: event.transaction.itemName,
+          createdAt: DateTime.now(),
+        ),
+      );
       emit(const InventorySuccess('تم إضافة المعاملة بنجاح'));
       add(LoadItems());
     } catch (e) {
@@ -270,7 +341,10 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     }
   }
 
-  Future<void> _onLoadInventorySummary(LoadInventorySummary event, Emitter<InventoryState> emit) async {
+  Future<void> _onLoadInventorySummary(
+    LoadInventorySummary event,
+    Emitter<InventoryState> emit,
+  ) async {
     emit(InventoryLoading());
     try {
       final summary = await _repository.getInventorySummary();
@@ -280,17 +354,26 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     }
   }
 
-  Future<void> _onLoadStockMovementReport(LoadStockMovementReport event, Emitter<InventoryState> emit) async {
+  Future<void> _onLoadStockMovementReport(
+    LoadStockMovementReport event,
+    Emitter<InventoryState> emit,
+  ) async {
     emit(InventoryLoading());
     try {
-      final report = await _repository.getStockMovementReport(event.startDate, event.endDate);
+      final report = await _repository.getStockMovementReport(
+        event.startDate,
+        event.endDate,
+      );
       emit(StockMovementReportLoaded(report));
     } catch (e) {
       emit(InventoryError(e.toString()));
     }
   }
 
-  Future<void> _onLoadLowStockReport(LoadLowStockReport event, Emitter<InventoryState> emit) async {
+  Future<void> _onLoadLowStockReport(
+    LoadLowStockReport event,
+    Emitter<InventoryState> emit,
+  ) async {
     emit(InventoryLoading());
     try {
       final report = await _repository.getLowStockReport();

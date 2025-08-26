@@ -1,17 +1,12 @@
 import 'package:equatable/equatable.dart';
 
-enum TransactionType {
-  purchase,
-  sale,
-  return_,
-  adjustment,
-  production,
-  waste,
-}
+enum TransactionType { purchase, sale, return_, adjustment, production, waste }
 
 class InventoryTransaction extends Equatable {
   final int? id;
   final int itemId;
+  // Optional, for logging/UI convenience. Not persisted.
+  final String? itemName;
   final TransactionType type;
   final double quantity;
   final String? reference;
@@ -21,6 +16,7 @@ class InventoryTransaction extends Equatable {
   const InventoryTransaction({
     this.id,
     required this.itemId,
+    this.itemName,
     required this.type,
     required this.quantity,
     this.reference,
@@ -28,12 +24,17 @@ class InventoryTransaction extends Equatable {
     required this.createdAt,
   });
 
-  bool get isIncoming => type == TransactionType.purchase || type == TransactionType.return_;
-  bool get isOutgoing => type == TransactionType.sale || type == TransactionType.production || type == TransactionType.waste;
+  bool get isIncoming =>
+      type == TransactionType.purchase || type == TransactionType.return_;
+  bool get isOutgoing =>
+      type == TransactionType.sale ||
+      type == TransactionType.production ||
+      type == TransactionType.waste;
 
   InventoryTransaction copyWith({
     int? id,
     int? itemId,
+    String? itemName,
     TransactionType? type,
     double? quantity,
     String? reference,
@@ -43,6 +44,7 @@ class InventoryTransaction extends Equatable {
     return InventoryTransaction(
       id: id ?? this.id,
       itemId: itemId ?? this.itemId,
+      itemName: itemName ?? this.itemName,
       type: type ?? this.type,
       quantity: quantity ?? this.quantity,
       reference: reference ?? this.reference,
@@ -67,6 +69,7 @@ class InventoryTransaction extends Equatable {
     return InventoryTransaction(
       id: map['id']?.toInt(),
       itemId: map['item_id']?.toInt() ?? 0,
+      // itemName is not stored in DB
       type: TransactionType.values.firstWhere(
         (e) => e.name == map['type'],
         orElse: () => TransactionType.adjustment,
@@ -80,12 +83,13 @@ class InventoryTransaction extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        itemId,
-        type,
-        quantity,
-        reference,
-        notes,
-        createdAt,
-      ];
+    id,
+    itemId,
+    itemName,
+    type,
+    quantity,
+    reference,
+    notes,
+    createdAt,
+  ];
 }

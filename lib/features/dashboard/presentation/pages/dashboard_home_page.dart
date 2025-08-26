@@ -5,8 +5,21 @@ import '../../../inventory/presentation/bloc/inventory_bloc.dart';
 import '../bloc/dashboard_bloc.dart';
 import '../../domain/entities/dashboard_summary.dart';
 
-class DashboardHomePage extends StatelessWidget {
+class DashboardHomePage extends StatefulWidget {
   const DashboardHomePage({super.key});
+
+  @override
+  State<DashboardHomePage> createState() => _DashboardHomePageState();
+}
+
+class _DashboardHomePageState extends State<DashboardHomePage> {
+  @override
+  void initState() {
+    super.initState();
+    // أول ما الصفحة تتبني أطلب البيانات
+    context.read<DashboardBloc>().add(LoadDashboardSummary());
+    context.read<DashboardBloc>().add(LoadRecentActivity());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,19 +70,23 @@ class DashboardHomePage extends StatelessWidget {
 
                     const SizedBox(height: AppConstants.defaultPadding),
 
-                    // Quick Stats
-                    // if (inventoryState is InventorySummaryLoaded) ...[
-                    //   _buildQuickStats(context, inventoryState.summary),
-                    //   const SizedBox(height: AppConstants.defaultPadding),
-                    // ],
+                    BlocBuilder<DashboardBloc, DashboardState>(
+                      buildWhen: (prev, curr) => curr is DashboardSummaryLoaded,
+                      builder: (context, state) {
+                        final summary =
+                            state is DashboardSummaryLoaded
+                                ? state.summary
+                                : null;
+                        return _buildDashboardOverview(context, summary);
+                      },
+                    ),
 
                     // Dashboard Overview Cards
-                    if (dashboardState is DashboardSummaryLoaded) ...[
-                      _buildDashboardOverview(context, dashboardState.summary),
-                    ] else ...[
-                      _buildDashboardOverview(context, null),
-                    ],
-
+                    // if (dashboardState is DashboardSummaryLoaded) ...[
+                    //   _buildDashboardOverview(context, dashboardState.summary),
+                    // ] else ...[
+                    //   _buildDashboardOverview(context, null),
+                    // ],
                     const SizedBox(height: AppConstants.defaultPadding),
 
                     // Quick Actions
@@ -78,86 +95,27 @@ class DashboardHomePage extends StatelessWidget {
                     const SizedBox(height: AppConstants.defaultPadding),
 
                     // Recent Activity
-                    if (dashboardState is RecentActivityLoaded) ...[
-                      _buildRecentActivity(context, dashboardState.activities),
-                    ] else ...[
-                      _buildRecentActivity(context, null),
-                    ],
+                    BlocBuilder<DashboardBloc, DashboardState>(
+                      buildWhen: (prev, curr) => curr is RecentActivityLoaded,
+                      builder: (context, state) {
+                        final activities =
+                            state is RecentActivityLoaded
+                                ? state.activities
+                                : null;
+                        return _buildRecentActivity(context, activities);
+                      },
+                    ),
+                    // if (dashboardState is RecentActivityLoaded) ...[
+                    //   _buildRecentActivity(context, dashboardState.activities),
+                    // ] else ...[
+                    //   _buildRecentActivity(context, null),
+                    // ],
                   ],
                 ),
               );
             },
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildQuickStats(BuildContext context, Map<String, dynamic> summary) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            context,
-            'إجمالي العناصر',
-            '${summary['total_items'] ?? 0}',
-            Icons.inventory,
-            Colors.blue,
-          ),
-        ),
-        const SizedBox(width: AppConstants.smallPadding),
-        Expanded(
-          child: _buildStatCard(
-            context,
-            'القيمة الإجمالية',
-            '${summary['total_value']?.toStringAsFixed(2) ?? '0'} ريال',
-            Icons.attach_money,
-            Colors.green,
-          ),
-        ),
-        const SizedBox(width: AppConstants.smallPadding),
-        Expanded(
-          child: _buildStatCard(
-            context,
-            'العناصر منخفضة المخزون',
-            '${summary['low_stock_items'] ?? 0}',
-            Icons.warning,
-            Colors.orange,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(
-    BuildContext context,
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppConstants.defaultPadding),
-        child: Column(
-          children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(height: AppConstants.smallPadding),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: AppConstants.smallPadding),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -284,11 +242,11 @@ class DashboardHomePage extends StatelessWidget {
     BuildContext context,
     Map<String, dynamic> activity,
   ) {
-    final type = activity['type'] as String?;
+    final type = activity['category'] as String?;
     final title =
         type == 'inventory'
-            ? '${activity['action']} ${activity['item_name']}'
-            : 'بيع رقم ${activity['reference']}';
+            ? '${activity['action']} ${activity['related_item']}'
+            : 'بيع رقم ${activity['amount']}';
     final subtitle =
         type == 'inventory'
             ? 'الكمية: ${activity['quantity']}'

@@ -248,15 +248,15 @@ class DatabaseHelper {
     ''');
 
     await db.execute('''
-  CREATE TABLE activities (
+   CREATE TABLE activities (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    type TEXT NOT NULL,           -- inventory, production, sales, worker...
-    action TEXT NOT NULL,         -- مثل: إضافة، تعديل، بيع، حضور...
-    reference TEXT,               -- رقم فاتورة، رقم طلب إنتاج...
-    item_name TEXT,               -- لو العملية على عنصر مخزون
-    quantity REAL,                -- الكمية لو ينطبق
-    amount REAL,                  -- المبلغ لو عملية بيع أو دفع
-    created_at TEXT NOT NULL      -- التاريخ والوقت
+    category TEXT NOT NULL,        -- التصنيف: inventory, production, sales, worker, finance...
+    action TEXT NOT NULL,          -- نوع العملية: إضافة، تعديل، حذف، بيع، حضور، دفع...
+    description TEXT,              -- وصف نصي حر يوضح تفاصيل العملية
+    related_item TEXT,             -- اسم العنصر لو العملية تخص عنصر معين (اختياري)
+    quantity REAL,                 -- الكمية لو ينطبق (مثال: إنتاج 50 وحدة)
+    amount REAL,                   -- المبلغ لو عملية مالية أو بيع
+    created_at TEXT NOT NULL       -- وقت التنفيذ
   )
 ''');
 

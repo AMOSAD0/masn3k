@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import '../../../../db/database_helper.dart';
 import '../../domain/entities/dashboard_summary.dart';
 
@@ -97,48 +99,28 @@ class DashboardLocalDataSource {
   }
 
   Future<List<Map<String, dynamic>>> getRecentActivity() async {
-    try {
-      // Get recent inventory transactions
-      final inventoryActivity = await _databaseHelper.rawQuery('''
-        SELECT 
-          'inventory' as type,
-          i.name as item_name,
-          it.type as action,
-          it.quantity,
-          it.created_at
-        FROM inventory_transactions it
-        JOIN items i ON it.item_id = i.id
-        ORDER BY it.created_at DESC
-        LIMIT 5
-      ''');
+  try {
+    final result = await _databaseHelper.rawQuery('''
+      SELECT 
+        id,
+        category,          -- نوع العملية (inventory, production...)
+        action,        -- الإجراء (إضافة، بيع...)
+        description,     -- فاتورة أو مرجع
+       related_item,     -- اسم العنصر لو ينطبق
+        quantity,      -- كمية لو ينطبق
+        amount,        -- مبلغ لو ينطبق
+        created_at
+      FROM activities
+      ORDER BY datetime(created_at) DESC
+      LIMIT 10
+    ''');
 
-      // Get recent sales
-      final salesActivity = await _databaseHelper.rawQuery('''
-        SELECT 
-          'sale' as type,
-          invoice_number as reference,
-          total_amount as amount,
-          sale_date as created_at
-        FROM sales
-        ORDER BY sale_date DESC
-        LIMIT 5
-      ''');
-
-      // Combine and sort activities
-      final allActivities = <Map<String, dynamic>>[];
-      allActivities.addAll(inventoryActivity);
-      allActivities.addAll(salesActivity);
-
-      allActivities.sort(
-        (a, b) => DateTime.parse(
-          b['created_at'],
-        ).compareTo(DateTime.parse(a['created_at'])),
-      );
-
-      return allActivities.take(10).toList();
-    } catch (e) {
-      return [];
-    }
+    return result;
+  } catch (e) {
+    // ممكن تطبع أو تسجل الخطأ للديباجينج
+    debugPrint('Error in getRecentActivity: $e');
+    return [];
   }
 }
 
+}

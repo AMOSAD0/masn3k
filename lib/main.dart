@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:masn3k/features/activities/data/datasources/activity_local_data_source.dart';
+import 'package:masn3k/features/activities/data/repositories/activity_repository_impl.dart';
+import 'package:masn3k/features/activities/domin/repositories/activity_repository.dart';
 
 import 'core/constants.dart';
 import 'core/theme.dart';
@@ -15,13 +18,21 @@ import 'features/dashboard/domain/repositories/dashboard_repository.dart';
 import 'features/dashboard/presentation/bloc/dashboard_bloc.dart';
 import 'widgets/dashboard_page.dart';
 
+class SimpleBlocObserver extends BlocObserver {
+  @override
+  void onChange(BlocBase bloc, Change change) {
+    super.onChange(bloc, change);
+    debugPrint('${bloc.runtimeType} => $change');
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize database
   final databaseHelper = DatabaseHelper();
   await databaseHelper.database;
-
+  Bloc.observer = SimpleBlocObserver();
   runApp(MyApp(databaseHelper: databaseHelper));
 }
 
@@ -46,12 +57,21 @@ class MyApp extends StatelessWidget {
                 DashboardLocalDataSource(databaseHelper),
               ),
         ),
+        RepositoryProvider<ActivityRepository>(
+          create:
+              (context) => ActivityRepositoryImpl(
+                ActivityLocalDataSource(databaseHelper),
+              ),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider<InventoryBloc>(
             create:
-                (context) => InventoryBloc(context.read<InventoryRepository>()),
+                (context) => InventoryBloc(
+                  context.read<InventoryRepository>(),
+                  context.read<ActivityRepository>(),
+                ),
           ),
           BlocProvider<DashboardBloc>(
             create:

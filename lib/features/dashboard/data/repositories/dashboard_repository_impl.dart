@@ -34,4 +34,3 @@ class DashboardRepositoryImpl implements DashboardRepository {
     }
   }
 }
-

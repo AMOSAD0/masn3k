@@ -19,7 +19,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
   final _quantityController = TextEditingController();
   final _referenceController = TextEditingController();
   final _notesController = TextEditingController();
-  
+
   TransactionType _selectedType = TransactionType.purchase;
 
   @override
@@ -47,12 +47,13 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                   labelText: 'نوع المعاملة *',
                   border: OutlineInputBorder(),
                 ),
-                items: TransactionType.values.map((type) {
-                  return DropdownMenuItem(
-                    value: type,
-                    child: Text(_getTransactionTypeName(type)),
-                  );
-                }).toList(),
+                items:
+                    TransactionType.values.map((type) {
+                      return DropdownMenuItem(
+                        value: type,
+                        child: Text(_getTransactionTypeName(type)),
+                      );
+                    }).toList(),
                 onChanged: (value) {
                   setState(() {
                     _selectedType = value!;
@@ -66,7 +67,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                 },
               ),
               const SizedBox(height: AppConstants.smallPadding),
-              
+
               // Quantity
               TextFormField(
                 controller: _quantityController,
@@ -90,7 +91,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                 },
               ),
               const SizedBox(height: AppConstants.smallPadding),
-              
+
               // Reference
               TextFormField(
                 controller: _referenceController,
@@ -101,7 +102,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                 ),
               ),
               const SizedBox(height: AppConstants.smallPadding),
-              
+
               // Notes
               TextFormField(
                 controller: _notesController,
@@ -112,7 +113,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                 maxLines: 3,
               ),
               const SizedBox(height: AppConstants.smallPadding),
-              
+
               // Current Stock Info
               Card(
                 color: Colors.grey[100],
@@ -128,12 +129,17 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                         ),
                       ),
                       const SizedBox(height: AppConstants.smallPadding),
-                      Text('الكمية الحالية: ${widget.item.quantity} ${widget.item.unit}'),
+                      Text(
+                        'الكمية الحالية: ${widget.item.quantity} ${widget.item.unit}',
+                      ),
                       if (widget.item.minQuantity > 0)
                         Text(
                           'الحد الأدنى: ${widget.item.minQuantity} ${widget.item.unit}',
                           style: TextStyle(
-                            color: widget.item.isLowStock ? Colors.orange : Colors.grey,
+                            color:
+                                widget.item.isLowStock
+                                    ? Colors.orange
+                                    : Colors.grey,
                           ),
                         ),
                     ],
@@ -178,10 +184,17 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
     if (_formKey.currentState!.validate()) {
       final transaction = InventoryTransaction(
         itemId: widget.item.id!,
+        itemName: widget.item.name,
         type: _selectedType,
         quantity: double.parse(_quantityController.text),
-        reference: _referenceController.text.trim().isEmpty ? null : _referenceController.text.trim(),
-        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+        reference:
+            _referenceController.text.trim().isEmpty
+                ? null
+                : _referenceController.text.trim(),
+        notes:
+            _notesController.text.trim().isEmpty
+                ? null
+                : _notesController.text.trim(),
         createdAt: DateTime.now(),
       );
 
