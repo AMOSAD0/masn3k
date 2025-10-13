@@ -4,6 +4,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:masn3k/features/activities/data/datasources/activity_local_data_source.dart';
 import 'package:masn3k/features/activities/data/repositories/activity_repository_impl.dart';
 import 'package:masn3k/features/activities/domin/repositories/activity_repository.dart';
+import 'package:masn3k/features/production/data/datasources/machine_local_datasource_impl.dart';
+import 'package:masn3k/features/production/data/datasources/production_local_datasource.dart';
+import 'package:masn3k/features/production/data/datasources/production_local_datasource_impl.dart';
+import 'package:masn3k/features/production/data/repositories/machine_repository_impl.dart';
+import 'package:masn3k/features/production/data/repositories/production_repository_impl.dart';
+import 'package:masn3k/features/production/domain/repositories/machine_repository.dart';
+import 'package:masn3k/features/production/domain/repositories/production_repository.dart';
 
 import 'core/constants.dart';
 import 'core/theme.dart';
@@ -38,6 +45,7 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   final DatabaseHelper databaseHelper;
+  // final ProductionLocalDataSource data;
 
   const MyApp({super.key, required this.databaseHelper});
 
@@ -46,36 +54,39 @@ class MyApp extends StatelessWidget {
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<InventoryRepository>(
-          create:
-              (context) => InventoryRepositoryImpl(
-                InventoryLocalDataSource(databaseHelper),
-              ),
+          create: (context) =>
+              InventoryRepositoryImpl(InventoryLocalDataSource(databaseHelper)),
         ),
         RepositoryProvider<DashboardRepository>(
-          create:
-              (context) => DashboardRepositoryImpl(
-                DashboardLocalDataSource(databaseHelper),
-              ),
+          create: (context) =>
+              DashboardRepositoryImpl(DashboardLocalDataSource(databaseHelper)),
         ),
         RepositoryProvider<ActivityRepository>(
-          create:
-              (context) => ActivityRepositoryImpl(
-                ActivityLocalDataSource(databaseHelper),
-              ),
+          create: (context) =>
+              ActivityRepositoryImpl(ActivityLocalDataSource(databaseHelper)),
+        ),
+
+        RepositoryProvider<ProductionRepository>(
+          create: (context) =>
+              ProductionRepositoryImpl(ProductionLocalDataSourceImpl()),
+        ),
+
+        RepositoryProvider<MachineRepository>(
+          create: (context) =>
+              MachineRepositoryImpl(MachineLocalDataSourceImpl()),
         ),
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider<InventoryBloc>(
-            create:
-                (context) => InventoryBloc(
-                  context.read<InventoryRepository>(),
-                  context.read<ActivityRepository>(),
-                ),
+            create: (context) => InventoryBloc(
+              context.read<InventoryRepository>(),
+              context.read<ActivityRepository>(),
+            ),
           ),
           BlocProvider<DashboardBloc>(
-            create:
-                (context) => DashboardBloc(context.read<DashboardRepository>()),
+            create: (context) =>
+                DashboardBloc(context.read<DashboardRepository>()),
           ),
         ],
         child: MaterialApp(
