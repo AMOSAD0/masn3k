@@ -1,10 +1,11 @@
 // lib/features/production/presentation/dialogs/create_machine_dialog.dart
 import 'package:flutter/material.dart';
+import 'package:masn3k/features/production/domain/entity/machien.dart';
 import 'package:masn3k/features/production/presentation/model/machien_ui_model.dart';
 
 class CreateMachineDialog extends StatefulWidget {
-  final MachineUiModel? existing;
-  final Function(MachineUiModel) onSave;
+  final Machine? existing;
+  final Function(Machine) onSave;
 
   const CreateMachineDialog({super.key, this.existing, required this.onSave});
 
@@ -22,7 +23,7 @@ class _CreateMachineDialogState extends State<CreateMachineDialog> {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.existing?.name ?? '');
     _locationCtrl = TextEditingController(
-      text: widget.existing?.location ?? '',
+      text: widget.existing?.description ?? '',
     );
     _status = widget.existing?.status ?? 'active';
   }
@@ -79,10 +80,15 @@ class _CreateMachineDialogState extends State<CreateMachineDialog> {
   void _handleSave() {
     if (_nameCtrl.text.trim().isEmpty) return;
 
-    final machine = MachineUiModel(
+    final machine = Machine(
+      id: _isEdit ? widget.existing!.id : null,
       name: _nameCtrl.text.trim(),
-      location: _locationCtrl.text.trim(),
+      description: _locationCtrl.text.trim(),
       status: _status,
+      updatedAt: DateTime.now().toIso8601String(),
+      createdAt: _isEdit
+          ? widget.existing!.createdAt
+          : DateTime.now().toIso8601String(),
     );
 
     widget.onSave(machine);

@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:masn3k/core/constants.dart';
+import 'package:masn3k/features/production/domain/entity/machien.dart';
+import 'package:masn3k/features/production/presentation/bloc/bloc_machien/machien_bloc.dart';
+import 'package:masn3k/features/production/presentation/bloc/bloc_machien/machien_event.dart';
+import 'package:masn3k/features/production/presentation/bloc/bloc_machien/machien_state.dart';
 import 'package:masn3k/features/production/presentation/dialogs/create_machine_dialog.dart';
 import 'package:masn3k/features/production/presentation/dialogs/log_breakdown_dialog.dart';
 import 'package:masn3k/features/production/presentation/dialogs/log_maintenance_dialog.dart';
@@ -39,6 +44,7 @@ class _ProductionPageState extends State<ProductionPage>
       status: OrderStatus.inProgress,
     ),
   ];
+
   final List<MachineUiModel> _machines = [
     MachineUiModel(name: 'آلة 1', location: 'الخط 1', status: 'active'),
     MachineUiModel(name: 'آلة 2', location: 'الخط 2', status: 'maintenance'),
@@ -127,30 +133,53 @@ class _ProductionPageState extends State<ProductionPage>
   }
 
   Widget _buildMachinesTab() {
-    return Column(
-      children: [
-        MachineActionsBar(
-          onAddMachine: _showCreateMachineDialog,
-          onLogBreakdown: _showLogBreakdownDialog,
-          onLogMaintenance: _showLogMaintenanceDialog,
-        ),
-        const Divider(height: 1),
-        Expanded(
-          child: ListView.separated(
-            itemCount: _machines.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              return MachineListItem(
-                machine: _machines[index],
-                onEdit: () =>
-                    _showCreateMachineDialog(existing: _machines[index]),
-                onDelete: () =>
-                    setState(() => _machines.remove(_machines[index])),
-              );
-            },
-          ),
-        ),
-      ],
+    return BlocConsumer<MachienBloc, MachienState>(
+      listener: (context, state) {
+        if (state is MachienError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      },
+      builder: (context, state) {
+        if (state is MachienLoading) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (state is MachienLoaded) {
+          return Column(
+            children: [
+              MachineActionsBar(
+                onAddMachine: _showCreateMachineDialog,
+                onLogBreakdown: _showLogBreakdownDialog,
+                onLogMaintenance: _showLogMaintenanceDialog,
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: ListView.separated(
+                  itemCount: state.machiens.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    return MachineListItem(
+                      machine: state.machiens[index],
+                      onEdit: () => _showCreateMachineDialog(
+                        existing: state.machiens[index],
+                      ),
+                      onDelete: () => {
+                        context.read<MachienBloc>().add(
+                          DeleteMachien(state.machiens[index]),
+                        ),
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        }
+        return SizedBox();
+      },
     );
   }
 
@@ -174,20 +203,17 @@ class _ProductionPageState extends State<ProductionPage>
     );
   }
 
-  void _showCreateMachineDialog({MachineUiModel? existing}) {
+  void _showCreateMachineDialog({Machine? existing}) {
     showDialog(
       context: context,
       builder: (_) => CreateMachineDialog(
         existing: existing,
         onSave: (machine) {
-          setState(() {
-            if (existing != null) {
-              final index = _machines.indexOf(existing);
-              _machines[index] = machine;
-            } else {
-              _machines.add(machine);
-            }
-          });
+          if (existing != null) {
+            context.read<MachienBloc>().add(UpdateMachien(machine));
+          } else {
+            context.read<MachienBloc>().add(InsertMachien(machine));
+          }
         },
       ),
     );

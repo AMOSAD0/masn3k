@@ -1,9 +1,9 @@
 // lib/features/production/presentation/widgets/machine_list_item.dart
 import 'package:flutter/material.dart';
-import 'package:masn3k/features/production/presentation/model/machien_ui_model.dart';
+import 'package:masn3k/features/production/domain/entity/machien.dart';
 
 class MachineListItem extends StatelessWidget {
-  final MachineUiModel machine;
+  final Machine machine;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -19,7 +19,9 @@ class MachineListItem extends StatelessWidget {
     return ListTile(
       leading: const Icon(Icons.precision_manufacturing),
       title: Text(machine.name),
-      subtitle: Text('الموقع: ${machine.location} • الحالة: ${machine.status}'),
+      subtitle: Text(
+        'الموقع: ${machine.description} • الحالة: ${machine.status}',
+      ),
       trailing: PopupMenuButton<String>(
         onSelected: (v) {
           switch (v) {

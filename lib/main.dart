@@ -4,6 +4,11 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:masn3k/features/activities/data/datasources/activity_local_data_source.dart';
 import 'package:masn3k/features/activities/data/repositories/activity_repository_impl.dart';
 import 'package:masn3k/features/activities/domin/repositories/activity_repository.dart';
+import 'package:masn3k/features/production/data/production_local_data_source.dart';
+import 'package:masn3k/features/production/data/repositories/production_repositry_impl.dart';
+import 'package:masn3k/features/production/domain/repository/production_repository.dart';
+import 'package:masn3k/features/production/presentation/bloc/bloc_machien/machien_bloc.dart';
+import 'package:masn3k/features/production/presentation/bloc/bloc_machien/machien_event.dart';
 
 import 'core/constants.dart';
 import 'core/theme.dart';
@@ -58,6 +63,11 @@ class MyApp extends StatelessWidget {
           create: (context) =>
               ActivityRepositoryImpl(ActivityLocalDataSource(databaseHelper)),
         ),
+        RepositoryProvider<ProductionRepository>(
+          create: (context) => ProductionRepositryImpl(
+            ProductionLocalDataSource(databaseHelper),
+          ),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -70,6 +80,11 @@ class MyApp extends StatelessWidget {
           BlocProvider<DashboardBloc>(
             create: (context) =>
                 DashboardBloc(context.read<DashboardRepository>()),
+          ),
+          BlocProvider<MachienBloc>(
+            create: (context) =>
+                MachienBloc(context.read<ProductionRepository>())
+                  ..add(LoadMachiens()),
           ),
         ],
         child: MaterialApp(
